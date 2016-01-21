@@ -30,4 +30,41 @@
       .pipe($.concat('stringencoders.min.js'))
       .pipe(gulp.dest('dist'));
   });
+
+  gulp.task('connect', function () {
+    var app = null,
+      serveStatic = require('serve-static'),
+      serveIndex = require('serve-index');
+
+    app = require('connect')()
+      .use(require('connect-livereload')({
+        port: 35729
+      }))
+      .use(serveStatic('tests'))
+      .use('/src', serveStatic('src'))
+      .use('/examples', serveStatic('examples'))
+      .use(serveIndex('tests'));
+
+    require('http').createServer(app)
+      .listen(9000)
+      .on('listening', function () {
+        console.log('Started connect web server on http://localhost:9000');
+      });
+  });
+
+  gulp.task('serve', ['connect', 'watch'], function () {
+    require('opn')('http://localhost:9000');
+  });
+
+  gulp.task('watch', ['connect'], function () {
+    $.livereload.listen();
+
+    // watch for changes
+    gulp.watch([
+      'tests/**/*.*',
+      'src/**/*.*',
+      'examples/**/*.*'
+    ]).on('change', $.livereload.changed);
+  });
+
 }());
