@@ -25,6 +25,34 @@
  */
 
 /*
+ * Additional edits made by Michael Gardner.
+ *
+ * Copyright (c) 2016 SumTotal Systems, LLC
+ * http://code.google.com/p/stringencoders/source/browse/#svn/trunk/javascript
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/*
  * url processing in the spirit of python's urlparse module
  * see `pydoc urlparse` or
  * http://docs.python.org/library/urlparse.html
@@ -85,18 +113,31 @@
  * TODO: test netloc missing, but hostname present
  */
 
-var urlparse = {};
+(function (root, factory) {
+  'use strict';
+  if (typeof exports === 'object') {
+    // Node
+    module.exports = factory();
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define([], factory);
+  } else {
+    // Browser globals (root is window)
+    root.base64 = factory();
+  }
+}(this, function () {
+  'use strict';
+  var urlparse = {};
 
-// Unlike to be useful standalone
-//
-// NORMALIZE PATH with "../" and "./"
-//   http://en.wikipedia.org/wiki/URL_normalization
-//   http://tools.ietf.org/html/rfc3986#section-5.2.3
-//
-urlparse.normalizepath = function(path)
-{
+  // Unlike to be useful standalone
+  //
+  // NORMALIZE PATH with "../" and "./"
+  //   http://en.wikipedia.org/wiki/URL_normalization
+  //   http://tools.ietf.org/html/rfc3986#section-5.2.3
+  //
+  urlparse.normalizepath = function (path) {
     if (!path || path === '/') {
-        return '/';
+      return '/';
     }
 
     var parts = path.split('/');
@@ -104,83 +145,80 @@ urlparse.normalizepath = function(path)
     var newparts = [];
     // make sure path always starts with '/'
     if (parts[0]) {
-        newparts.push('');
+      newparts.push('');
     }
 
     for (var i = 0; i < parts.length; ++i) {
-        if (parts[i] === '..') {
-            if (newparts.length > 1) {
-                newparts.pop();
-            } else {
-                newparts.push(parts[i]);
-            }
-        } else if (parts[i] != '.') {
-            newparts.push(parts[i]);
+      if (parts[i] === '..') {
+        if (newparts.length > 1) {
+          newparts.pop();
+        } else {
+          newparts.push(parts[i]);
         }
+      } else if (parts[i] != '.') {
+        newparts.push(parts[i]);
+      }
     }
 
     path = newparts.join('/');
     if (!path) {
-        path = '/';
+      path = '/';
     }
     return path;
-};
+  };
 
-//
-// Does many of the normalizations that the stock
-//  python urlsplit/urlunsplit/urljoin neglects
-//
-// Doesn't do hex-escape normalization on path or query
-//   %7e -> %7E
-// Nor, '+' <--> %20 translation
-//
-urlparse.urlnormalize = function(url)
-{
+  //
+  // Does many of the normalizations that the stock
+  //  python urlsplit/urlunsplit/urljoin neglects
+  //
+  // Doesn't do hex-escape normalization on path or query
+  //   %7e -> %7E
+  // Nor, '+' <--> %20 translation
+  //
+  urlparse.urlnormalize = function (url) {
     var parts = urlparse.urlsplit(url);
     switch (parts.scheme) {
     case 'file':
-        // files can't have query strings
-        //  and we don't bother with fragments
-        parts.query = '';
-        parts.fragment = '';
-        break;
+      // files can't have query strings
+      //  and we don't bother with fragments
+      parts.query = '';
+      parts.fragment = '';
+      break;
     case 'http':
     case 'https':
-        // remove default port
-        if ((parts.scheme === 'http' && parts.port == 80) ||
-            (parts.scheme === 'https' && parts.port == 443)) {
-            delete parts.port;
-            // hostname is already lower case
-            parts.netloc = parts.hostname;
-        }
-        break;
+      // remove default port
+      if ((parts.scheme === 'http' && parts.port == 80) ||
+        (parts.scheme === 'https' && parts.port == 443)) {
+        delete parts.port;
+        // hostname is already lower case
+        parts.netloc = parts.hostname;
+      }
+      break;
     default:
-        // if we don't have specific normalizations for this
-        // scheme, return the original url unmolested
-        return url;
+      // if we don't have specific normalizations for this
+      // scheme, return the original url unmolested
+      return url;
     }
 
     // for [file|http|https].  Not sure about other schemes
     parts.path = urlparse.normalizepath(parts.path);
 
     return urlparse.urlunsplit(parts);
-};
+  };
 
-urlparse.urldefrag = function(url)
-{
+  urlparse.urldefrag = function (url) {
     var idx = url.indexOf('#');
     if (idx == -1) {
-        return [ url, '' ];
+      return [url, ''];
     } else {
-        return [ url.substr(0,idx), url.substr(idx+1) ];
+      return [url.substr(0, idx), url.substr(idx + 1)];
     }
-};
+  };
 
-urlparse.urlsplit = function(url, default_scheme, allow_fragments)
-{
+  urlparse.urlsplit = function (url, default_scheme, allow_fragments) {
     var leftover;
     if (typeof allow_fragments === 'undefined') {
-        allow_fragments = true;
+      allow_fragments = true;
     }
 
     // scheme (optional), host, port
@@ -192,79 +230,78 @@ urlparse.urlsplit = function(url, default_scheme, allow_fragments)
 
     var parts = url.match(fullurl);
     if (parts) {
-        o.scheme = parts[1] || default_scheme || '';
-        o.hostname = parts[3].toLowerCase() || '';
-        o.port = parseInt(parts[4],10) || '';
-        // Probably should grab the netloc from regexp
-        //  and then parse again for hostname/port
+      o.scheme = parts[1] || default_scheme || '';
+      o.hostname = parts[3].toLowerCase() || '';
+      o.port = parseInt(parts[4], 10) || '';
+      // Probably should grab the netloc from regexp
+      //  and then parse again for hostname/port
 
-        o.netloc = parts[3];
-        if (parts[4]) {
-            o.netloc += ':' + parts[4];
-        }
+      o.netloc = parts[3];
+      if (parts[4]) {
+        o.netloc += ':' + parts[4];
+      }
 
-        leftover = parts[5];
+      leftover = parts[5];
     } else {
-        o.scheme = default_scheme || '';
-        o.netloc = '';
-        o.hostname = '';
-        leftover = url;
+      o.scheme = default_scheme || '';
+      o.netloc = '';
+      o.hostname = '';
+      leftover = url;
     }
     o.scheme = o.scheme.toLowerCase();
 
     parts = leftover.match(parse_leftovers);
 
-    o.path =  parts[1] || '';
+    o.path = parts[1] || '';
     o.query = parts[2] || '';
 
     if (allow_fragments) {
-        o.fragment = parts[3] || '';
+      o.fragment = parts[3] || '';
     } else {
-        o.fragment = '';
+      o.fragment = '';
     }
 
     return o;
-}
+  };
 
-urlparse.urlunsplit = function(o) {
+  urlparse.urlunsplit = function (o) {
     var s = '';
     if (o.scheme) {
-        s += o.scheme + '://';
+      s += o.scheme + '://';
     }
 
     if (o.netloc) {
-        if (s == '') {
-            s += '//';
-        }
-        s +=  o.netloc;
+      if (s === '') {
+        s += '//';
+      }
+      s += o.netloc;
     } else if (o.hostname) {
-        // extension.  Python only uses netloc
-        if (s == '') {
-            s += '//';
-        }
-        s += o.hostname;
-        if (o.port) {
-            s += ':' + o.port;
-        }
+      // extension.  Python only uses netloc
+      if (s === '') {
+        s += '//';
+      }
+      s += o.hostname;
+      if (o.port) {
+        s += ':' + o.port;
+      }
     }
 
     if (o.path) {
-        s += o.path;
+      s += o.path;
     }
 
     if (o.query) {
-        s += '?' + o.query;
+      s += '?' + o.query;
     }
     if (o.fragment) {
-        s += '#' + o.fragment;
+      s += '#' + o.fragment;
     }
     return s;
-}
+  };
 
-urlparse.urljoin = function(base, url, allow_fragments)
-{
+  urlparse.urljoin = function (base, url, allow_fragments) {
     if (typeof allow_fragments === 'undefined') {
-        allow_fragments = true;
+      allow_fragments = true;
     }
 
     var url_parts = urlparse.urlsplit(url);
@@ -272,43 +309,43 @@ urlparse.urljoin = function(base, url, allow_fragments)
     // if url parts has a scheme (i.e. absolute)
     // then nothing to do
     if (url_parts.scheme) {
-        if (! allow_fragments) {
-            return url;
-        } else {
-            return urlparse.urldefrag(url)[0];
-        }
+      if (!allow_fragments) {
+        return url;
+      } else {
+        return urlparse.urldefrag(url)[0];
+      }
     }
     var base_parts = urlparse.urlsplit(base);
 
     // copy base, only if not present
     if (!base_parts.scheme) {
-        base_parts.scheme = url_parts.scheme;
+      base_parts.scheme = url_parts.scheme;
     }
 
     // copy netloc, only if not present
     if (!base_parts.netloc || !base_parts.hostname) {
-        base_parts.netloc = url_parts.netloc;
-        base_parts.hostname = url_parts.hostname;
-        base_parts.port = url_parts.port;
+      base_parts.netloc = url_parts.netloc;
+      base_parts.hostname = url_parts.hostname;
+      base_parts.port = url_parts.port;
     }
 
     // paths
     if (url_parts.path.length > 0) {
-        if (url_parts.path.charAt(0) == '/') {
-            base_parts.path = url_parts.path;
+      if (url_parts.path.charAt(0) == '/') {
+        base_parts.path = url_parts.path;
+      } else {
+        // relative path.. get rid of "current filename" and
+        //   replace.  Same as var parts =
+        //   base_parts.path.split('/'); parts[parts.length-1] =
+        //   url_parts.path; base_parts.path = parts.join('/');
+        var idx = base_parts.path.lastIndexOf('/');
+        if (idx == -1) {
+          base_parts.path = url_parts.path;
         } else {
-            // relative path.. get rid of "current filename" and
-            //   replace.  Same as var parts =
-            //   base_parts.path.split('/'); parts[parts.length-1] =
-            //   url_parts.path; base_parts.path = parts.join('/');
-            var idx = base_parts.path.lastIndexOf('/');
-            if (idx == -1) {
-                base_parts.path = url_parts.path;
-            } else {
-                base_parts.path = base_parts.path.substr(0,idx) + '/' +
-                    url_parts.path;
-            }
+          base_parts.path = base_parts.path.substr(0, idx) + '/' +
+            url_parts.path;
         }
+      }
     }
 
     // clean up path
@@ -319,10 +356,11 @@ urlparse.urljoin = function(base, url, allow_fragments)
 
     // copy fragments
     if (allow_fragments) {
-        base_parts.fragment = url_parts.fragment;
+      base_parts.fragment = url_parts.fragment;
     } else {
-        base_parts.fragment = '';
+      base_parts.fragment = '';
     }
 
     return urlparse.urlunsplit(base_parts);
-}
+  };
+}));
