@@ -123,7 +123,7 @@
     define([], factory);
   } else {
     // Browser globals (root is window)
-    root.base64 = factory();
+    root.urlparse = factory();
   }
 }(this, function () {
   'use strict';
@@ -363,4 +363,6 @@
 
     return urlparse.urlunsplit(base_parts);
   };
+
+  return urlparse;
 }));
