@@ -1,8 +1,8 @@
 {
   "name": "stringencoders",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Bower consumable and AMD compliant version of client9.com's JavaScript stringencoders: https://github.com/client9/stringencoders",
-  "main": "index.js",
+  "main": "dist/stringencoders.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
